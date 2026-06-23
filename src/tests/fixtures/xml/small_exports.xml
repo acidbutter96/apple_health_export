@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE HealthData [
+  <!ELEMENT HealthData (ExportDate, Me, Record*, Workout*)>
+  <!ATTLIST HealthData locale CDATA #IMPLIED>
+
+  <!ELEMENT ExportDate EMPTY>
+  <!ATTLIST ExportDate value CDATA #REQUIRED>
+
+  <!ELEMENT Me EMPTY>
+  <!ATTLIST Me
+    HKCharacteristicTypeIdentifierDateOfBirth CDATA #IMPLIED
+    HKCharacteristicTypeIdentifierBiologicalSex CDATA #IMPLIED
+    HKCharacteristicTypeIdentifierBloodType CDATA #IMPLIED
+    HKCharacteristicTypeIdentifierFitzpatrickSkinType CDATA #IMPLIED>
+
+  <!ELEMENT Record EMPTY>
+  <!ATTLIST Record
+    type CDATA #REQUIRED
+    sourceName CDATA #REQUIRED
+    sourceVersion CDATA #IMPLIED
+    device CDATA #IMPLIED
+    unit CDATA #IMPLIED
+    creationDate CDATA #REQUIRED
+    startDate CDATA #REQUIRED
+    endDate CDATA #REQUIRED
+    value CDATA #REQUIRED>
+
+  <!ELEMENT Workout (MetadataEntry*)>
+  <!ATTLIST Workout
+    workoutActivityType CDATA #REQUIRED
+    duration CDATA #REQUIRED
+    durationUnit CDATA #REQUIRED
+    totalDistance CDATA #IMPLIED
+    totalDistanceUnit CDATA #IMPLIED
+    totalEnergyBurned CDATA #IMPLIED
+    totalEnergyBurnedUnit CDATA #IMPLIED
+    sourceName CDATA #REQUIRED
+    sourceVersion CDATA #IMPLIED
+    device CDATA #IMPLIED
+    creationDate CDATA #REQUIRED
+    startDate CDATA #REQUIRED
+    endDate CDATA #REQUIRED>
+
+  <!ELEMENT MetadataEntry EMPTY>
+  <!ATTLIST MetadataEntry key CDATA #REQUIRED value CDATA #REQUIRED>
+]>
+<HealthData locale="en_US">
+  <ExportDate value="2026-06-23 10:00:00 -0300"/>
+  <Me
+    HKCharacteristicTypeIdentifierDateOfBirth="1996-01-01"
+    HKCharacteristicTypeIdentifierBiologicalSex="HKBiologicalSexMale"
+    HKCharacteristicTypeIdentifierBloodType="HKBloodTypeNotSet"
+    HKCharacteristicTypeIdentifierFitzpatrickSkinType="HKFitzpatrickSkinTypeNotSet"/>
+
+  <Record
+    type="HKQuantityTypeIdentifierStepCount"
+    sourceName="iPhone"
+    sourceVersion="18.5"
+    unit="count"
+    creationDate="2026-06-20 08:05:00 -0300"
+    startDate="2026-06-20 08:00:00 -0300"
+    endDate="2026-06-20 08:05:00 -0300"
+    value="342"/>
+
+  <Record
+    type="HKQuantityTypeIdentifierHeartRate"
+    sourceName="Apple Watch"
+    sourceVersion="11.5"
+    unit="count/min"
+    creationDate="2026-06-20 08:01:00 -0300"
+    startDate="2026-06-20 08:00:45 -0300"
+    endDate="2026-06-20 08:00:45 -0300"
+    value="78"/>
+
+  <Record
+    type="HKQuantityTypeIdentifierActiveEnergyBurned"
+    sourceName="Apple Watch"
+    sourceVersion="11.5"
+    unit="kcal"
+    creationDate="2026-06-20 08:30:00 -0300"
+    startDate="2026-06-20 08:00:00 -0300"
+    endDate="2026-06-20 08:30:00 -0300"
+    value="124.5"/>
+
+  <Record
+    type="HKQuantityTypeIdentifierDistanceWalkingRunning"
+    sourceName="iPhone"
+    sourceVersion="18.5"
+    unit="km"
+    creationDate="2026-06-20 08:30:00 -0300"
+    startDate="2026-06-20 08:00:00 -0300"
+    endDate="2026-06-20 08:30:00 -0300"
+    value="2.35"/>
+
+  <Workout
+    workoutActivityType="HKWorkoutActivityTypeWalking"
+    duration="30"
+    durationUnit="min"
+    totalDistance="2.35"
+    totalDistanceUnit="km"
+    totalEnergyBurned="124.5"
+    totalEnergyBurnedUnit="kcal"
+    sourceName="Apple Watch"
+    sourceVersion="11.5"
+    creationDate="2026-06-20 08:31:00 -0300"
+    startDate="2026-06-20 08:00:00 -0300"
+    endDate="2026-06-20 08:30:00 -0300">
+    <MetadataEntry key="HKIndoorWorkout" value="0"/>
+  </Workout>
+</HealthData>
