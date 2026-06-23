@@ -1,0 +1,104 @@
+\chapter{I/O e streaming: lendo arquivos grandes sem sofrer}
+
+\section{O que e I/O?}
+
+I/O significa \textit{Input/Output}. Em termos simples, e tudo que envolve entrada ou saida de dados fora da CPU. Ler um arquivo, escrever em disco, consultar banco e esperar uma resposta de rede sao exemplos de I/O.
+
+No seu projeto, as operacoes de I/O mais importantes sao:
+
+\begin{itemize}
+  \item ler \code{export.xml};
+  \item ler arquivos \code{.gpx};
+  \item inserir dados no Postgres;
+  \item escrever logs;
+  \item consultar tabelas de insights.
+\end{itemize}
+
+\section{Por que o XML gigante muda a estrategia?}
+
+Se o arquivo tem 280 MB ou 628 MB, carregar tudo em memoria pode ser ruim. Alem do texto bruto, bibliotecas como BeautifulSoup criam objetos Python para representar a arvore XML inteira. Isso pode multiplicar o uso de memoria.
+
+\begin{warningbox}{Evite no arquivo gigante}
+\begin{lstlisting}[style=devbutterpython]
+content = file.read_text(encoding="utf-8")
+soup = BeautifulSoup(content, "xml")
+\end{lstlisting}
+\end{warningbox}
+
+BeautifulSoup ainda pode ser util para arquivos pequenos, testes e inspecoes pontuais. Mas nao deve ser o parser principal do export gigante.
+
+\section{Streaming com iterparse}
+
+A alternativa e usar \code{xml.etree.ElementTree.iterparse}. Ele percorre o XML elemento por elemento.
+
+\begin{lstlisting}[style=devbutterpython]
+from pathlib import Path
+from collections.abc import Iterator
+import xml.etree.ElementTree as ET
+
+
+def clean_tag(tag: str) -> str:
+    if "}" in tag:
+        return tag.split("}", 1)[1]
+    return tag
+
+
+def stream_record_elements(xml_file: Path) -> Iterator[ET.Element]:
+    context = ET.iterparse(xml_file, events=("end",))
+
+    for _, element in context:
+        tag = clean_tag(element.tag)
+
+        if tag == "Record":
+            yield element
+
+        element.clear()
+\end{lstlisting}
+
+\section{Explicando cada nomezinho}
+
+\begin{itemize}
+  \item \code{Path}: objeto da biblioteca \code{pathlib} para lidar com caminhos de arquivo de forma mais segura que string.
+  \item \code{Iterator}: tipo que indica que a funcao retorna valores aos poucos.
+  \item \code{ET}: apelido comum para \code{xml.etree.ElementTree}.
+  \item \code{iterparse}: parser incremental de XML.
+  \item \code{events=("end",)}: processa o elemento quando ele fecha, ou seja, quando ja temos seus atributos e filhos.
+  \item \code{yield}: retorna um item sem encerrar a funcao; cria um generator.
+  \item \code{element.clear()}: limpa o elemento da memoria depois de processar.
+\end{itemize}
+
+\section{Complexidade}
+
+Se o XML tem \(n\) elementos, o parser passa por cada elemento uma vez:
+
+\[
+T(n) = O(n)
+\]
+
+A memoria tende a ser quase constante:
+
+\[
+M(n) \approx O(1)
+\]
+
+Isso nao significa literalmente zero crescimento, mas significa que voce nao precisa manter o XML inteiro em memoria.
+
+\section{Primeiro exercicio}
+
+Crie um XML pequeno em \code{tests/fixtures/small_export.xml} e teste se sua stream encontra apenas tags \code{Record}.
+
+\begin{lstlisting}[style=devbutterpython]
+def test_stream_record_elements_returns_records_only(tmp_path):
+    xml_file = tmp_path / "small_export.xml"
+    xml_file.write_text("""
+    <HealthData>
+        <Record type="HKQuantityTypeIdentifierHeartRate" value="90" />
+        <Workout workoutActivityType="HKWorkoutActivityTypeRunning" />
+    </HealthData>
+    """)
+
+    records = list(stream_record_elements(xml_file))
+
+    assert len(records) == 1
+    assert records[0].attrib["type"] == "HKQuantityTypeIdentifierHeartRate"
+\end{lstlisting}

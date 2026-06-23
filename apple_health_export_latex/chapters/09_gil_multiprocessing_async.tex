@@ -1,0 +1,142 @@
+\chapter{GIL, multiprocessing e async/await}
+
+\section{GIL na pratica}
+
+O GIL impede que multiplas threads executem bytecode Python puro simultaneamente no mesmo processo. Isso nao significa que threads sao inuteis. Significa que voce precisa entender o tipo de gargalo.
+
+\begin{longtable}{p{4cm}p{8cm}}
+\toprule
+\textbf{Cenario} & \textbf{Ferramenta provavel} \\
+\midrule
+I/O-bound & threads ou async \\
+CPU-bound & multiprocessing \\
+Muitos arquivos pequenos & ThreadPoolExecutor pode ajudar \\
+Transformacao numerica pesada & ProcessPoolExecutor pode ajudar \\
+API web com muitas esperas & async/await pode ajudar \\
+\bottomrule
+\end{longtable}
+
+\section{Multiprocessing}
+
+Multiprocessing cria processos separados. Cada processo tem seu proprio interpretador Python e seu proprio GIL. Por isso ele pode acelerar tarefas CPU-bound.
+
+Exemplo didatico:
+
+\begin{lstlisting}[style=devbutterpython]
+from concurrent.futures import ProcessPoolExecutor
+
+
+def cpu_heavy_transform(value: float | None) -> float | None:
+    if value is None:
+        return None
+
+    result = value
+    for _ in range(100_000):
+        result = (result * 1.000001) / 1.000001
+
+    return result
+
+
+def process_values(values: list[float | None]) -> list[float | None]:
+    with ProcessPoolExecutor() as executor:
+        return list(executor.map(cpu_heavy_transform, values))
+\end{lstlisting}
+
+\section{Custo do multiprocessing}
+
+Multiprocessing nao e gratis:
+
+\begin{itemize}
+  \item cada processo consome mais memoria;
+  \item dados precisam ser serializados entre processos;
+  \item criar processos tem overhead;
+  \item para tarefas pequenas, pode ficar mais lento.
+\end{itemize}
+
+Use multiprocessing quando o trabalho por item for pesado o suficiente.
+
+\section{ThreadPoolExecutor para GPX}
+
+Arquivos GPX sao bons candidatos para concorrencia porque geralmente existem varios arquivos menores.
+
+\begin{lstlisting}[style=devbutterpython]
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+
+def parse_gpx_file(file: Path) -> list[dict[str, str | None]]:
+    # parseia um arquivo GPX e retorna pontos
+    return []
+
+
+def parse_many_gpx(files: list[Path]) -> list[dict[str, str | None]]:
+    rows: list[dict[str, str | None]] = []
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        for file_rows in executor.map(parse_gpx_file, files):
+            rows.extend(file_rows)
+
+    return rows
+\end{lstlisting}
+
+\section{Async/await}
+
+\code{async/await} e uma forma de concorrencia cooperativa. Em vez de criar varias threads, um event loop alterna entre tarefas quando elas fazem \code{await} em operacoes I/O.
+
+Exemplo minimo:
+
+\begin{lstlisting}[style=devbutterpython]
+import asyncio
+
+
+async def producer(queue: asyncio.Queue[int]) -> None:
+    for item in range(10):
+        await queue.put(item)
+
+    await queue.put(-1)
+
+
+async def consumer(queue: asyncio.Queue[int]) -> None:
+    while True:
+        item = await queue.get()
+
+        if item == -1:
+            break
+
+        print(item)
+
+
+async def main() -> None:
+    queue: asyncio.Queue[int] = asyncio.Queue()
+
+    await asyncio.gather(
+        producer(queue),
+        consumer(queue),
+    )
+
+
+asyncio.run(main())
+\end{lstlisting}
+
+\section{Onde async entra no projeto?}
+
+Nao comece com async no parser principal. Primeiro faca a versao sincrona eficiente. Async pode entrar depois em:
+
+\begin{itemize}
+  \item API com FastAPI;
+  \item consulta de status de parse;
+  \item jobs em background;
+  \item writer async com \code{asyncpg};
+  \item dashboard consultando dados sem bloquear.
+\end{itemize}
+
+\section{Ordem recomendada}
+
+\begin{enumerate}
+  \item parser sincrono;
+  \item logs e profiling;
+  \item threads com queue;
+  \item ThreadPool para GPX;
+  \item ProcessPool para CPU-bound;
+  \item async para API ou I/O concorrente futuro.
+\end{enumerate}

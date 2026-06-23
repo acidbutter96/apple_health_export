@@ -1,0 +1,241 @@
+\chapter{Parser streaming + batching}
+
+\section{Fluxo desta etapa}
+
+Agora juntamos streaming, dataclass e Postgres.
+
+\begin{verbatim}
+XML element
+    -> parse attributes
+    -> HealthRecord dataclass
+    -> batch list
+    -> Postgres
+\end{verbatim}
+
+\section{Parser de elemento Record}
+
+Arquivo: \code{src/parser/xml_parser.py}
+
+\begin{lstlisting}[style=devbutterpython]
+import xml.etree.ElementTree as ET
+from src.models.health_record import HealthRecord
+
+
+def clean_tag(tag: str) -> str:
+    if "}" in tag:
+        return tag.split("}", 1)[1]
+    return tag
+
+
+def safe_float(value: str | None) -> float | None:
+    if value is None:
+        return None
+
+    try:
+        return float(value)
+    except ValueError:
+        return None
+
+
+def extract_metadata(element: ET.Element) -> dict[str, str]:
+    metadata: dict[str, str] = {}
+
+    for child in element:
+        if clean_tag(child.tag) != "MetadataEntry":
+            continue
+
+        key = child.attrib.get("key")
+        value = child.attrib.get("value")
+
+        if key is not None and value is not None:
+            metadata[key] = value
+
+    return metadata
+
+
+def parse_record_element(
+    element: ET.Element,
+    record_id: int,
+) -> HealthRecord:
+    raw_value = element.attrib.get("value")
+
+    return HealthRecord(
+        apple_record_id=record_id,
+        type=element.attrib.get("type"),
+        source_name=element.attrib.get("sourceName"),
+        source_version=element.attrib.get("sourceVersion"),
+        device=element.attrib.get("device"),
+        unit=element.attrib.get("unit"),
+        creation_date=element.attrib.get("creationDate"),
+        start_date=element.attrib.get("startDate"),
+        end_date=element.attrib.get("endDate"),
+        value=raw_value,
+        value_numeric=safe_float(raw_value),
+        metadata=extract_metadata(element),
+    )
+\end{lstlisting}
+
+\section{Repository com batch insert}
+
+Instale o driver:
+
+\begin{lstlisting}[style=devbutterbash]
+poetry add "psycopg[binary]"
+\end{lstlisting}
+
+Arquivo: \code{src/db/repository.py}
+
+\begin{lstlisting}[style=devbutterpython]
+import json
+from collections.abc import Sequence
+
+import psycopg
+
+from src.models.health_record import HealthRecord
+
+
+class HealthRecordRepository:
+    def __init__(self, connection: psycopg.Connection) -> None:
+        self.connection = connection
+
+    def insert_batch(self, records: Sequence[HealthRecord]) -> None:
+        if not records:
+            return
+
+        rows = [
+            (
+                record.apple_record_id,
+                record.type,
+                record.source_name,
+                record.source_version,
+                record.device,
+                record.unit,
+                record.creation_date,
+                record.start_date,
+                record.end_date,
+                record.value,
+                record.value_numeric,
+                json.dumps(record.metadata),
+            )
+            for record in records
+        ]
+
+        with self.connection.cursor() as cursor:
+            cursor.executemany(
+                """
+                INSERT INTO health_records (
+                    apple_record_id,
+                    type,
+                    source_name,
+                    source_version,
+                    device,
+                    unit,
+                    creation_date,
+                    start_date,
+                    end_date,
+                    value,
+                    value_numeric,
+                    metadata
+                )
+                VALUES (
+                    %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s, %s
+                )
+                """,
+                rows,
+            )
+
+        self.connection.commit()
+\end{lstlisting}
+
+\section{Pipeline sincrona}
+
+Arquivo: \code{src/pipelines/sync_pipeline.py}
+
+\begin{lstlisting}[style=devbutterpython]
+from pathlib import Path
+from time import perf_counter
+import logging
+import xml.etree.ElementTree as ET
+
+from src.db.repository import HealthRecordRepository
+from src.parser.xml_parser import clean_tag, parse_record_element
+
+logger = logging.getLogger(__name__)
+
+
+def run_sync_pipeline(
+    xml_file: Path,
+    repository: HealthRecordRepository,
+    batch_size: int,
+) -> None:
+    batch = []
+    record_id = 0
+    started_at = perf_counter()
+
+    context = ET.iterparse(xml_file, events=("end",))
+
+    for _, element in context:
+        tag = clean_tag(element.tag)
+
+        if tag == "Record":
+            record_id += 1
+            batch.append(parse_record_element(element, record_id))
+
+            if len(batch) >= batch_size:
+                insert_started_at = perf_counter()
+                repository.insert_batch(batch)
+                insert_elapsed = perf_counter() - insert_started_at
+
+                logger.info(
+                    "Inserted %s records in %.2fs | total=%s",
+                    len(batch),
+                    insert_elapsed,
+                    record_id,
+                )
+
+                batch.clear()
+
+        element.clear()
+
+    if batch:
+        repository.insert_batch(batch)
+
+    elapsed = perf_counter() - started_at
+    logger.info(
+        "Finished parsing %s records in %.2fs | %.2f records/s",
+        record_id,
+        elapsed,
+        record_id / elapsed if elapsed > 0 else 0,
+    )
+\end{lstlisting}
+
+\section{Conceitos aplicados}
+
+\begin{itemize}
+  \item \code{batch}: uma \code{list}; append e O(1) medio.
+  \item \code{batch_size}: tradeoff entre memoria e velocidade.
+  \item \code{iterparse}: lazy loading / streaming.
+  \item \code{insert_batch}: reduz overhead de I/O com o banco.
+  \item \code{perf_counter}: mede tempo com precisao suficiente para benchmark.
+\end{itemize}
+
+\section{Experimento}
+
+Rode a pipeline com:
+
+\begin{verbatim}
+batch_size = 500
+batch_size = 5000
+batch_size = 20000
+batch_size = 50000
+\end{verbatim}
+
+Anote:
+
+\begin{itemize}
+  \item tempo total;
+  \item records/s;
+  \item memoria percebida;
+  \item tempo medio por batch.
+\end{itemize}

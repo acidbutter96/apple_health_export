@@ -1,0 +1,164 @@
+\chapter{Roadmap passo a passo}
+
+\section{Milestone 1: Infra e Postgres}
+
+Entregaveis:
+
+\begin{itemize}
+  \item \code{docker-compose.yml};
+  \item \code{.env.example};
+  \item \code{settings.py};
+  \item conexao com Postgres;
+  \item schema inicial.
+\end{itemize}
+
+Conceitos:
+
+\begin{itemize}
+  \item banco relacional;
+  \item connection string;
+  \item variaveis de ambiente;
+  \item tipos SQL;
+  \item indices.
+\end{itemize}
+
+\section{Milestone 2: Profiler XML}
+
+Objetivo: descobrir o que existe no export.
+
+Entregaveis:
+
+\begin{itemize}
+  \item contar tags;
+  \item contar tipos de \code{Record};
+  \item coletar amostras pequenas;
+  \item salvar resultado em JSON ou tabela.
+\end{itemize}
+
+Conceitos:
+
+\begin{itemize}
+  \item streaming;
+  \item \code{Counter};
+  \item \code{dict};
+  \item \code{set};
+  \item O(n).
+\end{itemize}
+
+\section{Milestone 3: Parser sincrono}
+
+Entregaveis:
+
+\begin{itemize}
+  \item \code{HealthRecord} dataclass;
+  \item parser com \code{iterparse};
+  \item batch insert;
+  \item logs de progresso;
+  \item testes com XML pequeno.
+\end{itemize}
+
+Conceitos:
+
+\begin{itemize}
+  \item dataclass;
+  \item list como batch;
+  \item memory vs speed;
+  \item I/O-bound;
+  \item logging.
+\end{itemize}
+
+\section{Milestone 4: Benchmark}
+
+Entregaveis:
+
+\begin{itemize}
+  \item medir tempo total;
+  \item medir records/s;
+  \item comparar batch sizes;
+  \item salvar resultados em tabela ou markdown.
+\end{itemize}
+
+Conceitos:
+
+\begin{itemize}
+  \item profiling;
+  \item throughput;
+  \item fator constante;
+  \item tradeoffs.
+\end{itemize}
+
+\section{Milestone 5: Queue + Threading}
+
+Entregaveis:
+
+\begin{itemize}
+  \item producer;
+  \item consumer;
+  \item \code{queue.Queue};
+  \item backpressure com \code{maxsize};
+  \item comparar com pipeline sincrona.
+\end{itemize}
+
+Conceitos:
+
+\begin{itemize}
+  \item threads;
+  \item GIL;
+  \item I/O-bound;
+  \item concorrencia;
+  \item fila FIFO.
+\end{itemize}
+
+\section{Milestone 6: GPX concorrente}
+
+Entregaveis:
+
+\begin{itemize}
+  \item parser de GPX;
+  \item \code{ThreadPoolExecutor};
+  \item insert batch de pontos;
+  \item benchmark por numero de workers.
+\end{itemize}
+
+Conceitos:
+
+\begin{itemize}
+  \item fan-out/fan-in;
+  \item I/O concorrente;
+  \item threads para muitos arquivos.
+\end{itemize}
+
+\section{Milestone 7: Multiprocessing}
+
+Entregaveis:
+
+\begin{itemize}
+  \item transformacao CPU-bound artificial;
+  \item benchmark sync vs threads vs processos;
+  \item conclusao sobre GIL.
+\end{itemize}
+
+\section{Milestone 8: Insights}
+
+Entregaveis:
+
+\begin{itemize}
+  \item batimento medio por dia;
+  \item passos por dia;
+  \item treinos por semana;
+  \item sono por noite;
+  \item media movel de 7 dias;
+  \item tabela \code{daily_health_summary}.
+\end{itemize}
+
+\section{Milestone 9: Dashboard}
+
+Depois que os dados estiverem no banco e os insights basicos existirem, crie uma interface com Streamlit ou FastAPI + frontend.
+
+Ordem recomendada:
+
+\begin{enumerate}
+  \item Streamlit para visualizar rapido;
+  \item FastAPI se quiser API real;
+  \item async depois que houver endpoints I/O-bound claros.
+\end{enumerate}

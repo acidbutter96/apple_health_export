@@ -1,0 +1,127 @@
+\chapter{Testes e exercicios}
+
+\section{Por que testar com XML pequeno?}
+
+Voce nao deve testar com o arquivo gigante. Testes devem ser pequenos, rapidos e previsiveis.
+
+Crie:
+
+\begin{verbatim}
+tests/fixtures/small_export.xml
+\end{verbatim}
+
+Conteudo exemplo:
+
+\begin{lstlisting}[style=devbutterbash]
+<HealthData>
+    <ExportDate value="2026-06-23 08:00:00 -0300" />
+    <Record
+        type="HKQuantityTypeIdentifierHeartRate"
+        sourceName="Apple Watch"
+        unit="count/min"
+        startDate="2026-06-23 07:00:00 -0300"
+        endDate="2026-06-23 07:00:00 -0300"
+        value="90"
+    />
+    <Record
+        type="HKCategoryTypeIdentifierSleepAnalysis"
+        sourceName="Apple Watch"
+        startDate="2026-06-23 00:00:00 -0300"
+        endDate="2026-06-23 07:00:00 -0300"
+        value="HKCategoryValueSleepAnalysisAsleepCore"
+    />
+</HealthData>
+\end{lstlisting}
+
+\section{Testes de funcoes puras}
+
+\begin{lstlisting}[style=devbutterpython]
+from src.parser.xml_parser import clean_tag, safe_float
+
+
+def test_clean_tag_without_namespace():
+    assert clean_tag("Record") == "Record"
+
+
+def test_clean_tag_with_namespace():
+    tag = "{http://www.topografix.com/GPX/1/1}trkpt"
+    assert clean_tag(tag) == "trkpt"
+
+
+def test_safe_float_number():
+    assert safe_float("90") == 90.0
+
+
+def test_safe_float_text():
+    assert safe_float("HKCategoryValueSleepAnalysisAsleepCore") is None
+\end{lstlisting}
+
+\section{Exercicios progressivos}
+
+\subsection{Exercicio 1: Counter}
+
+Conte palavras:
+
+\begin{lstlisting}[style=devbutterpython]
+words = ["heart", "steps", "heart", "sleep"]
+\end{lstlisting}
+
+Resultado esperado:
+
+\begin{lstlisting}[style=devbutterpython]
+{"heart": 2, "steps": 1, "sleep": 1}
+\end{lstlisting}
+
+Depois aplique a mesma ideia para contar tipos de \code{Record}.
+
+\subsection{Exercicio 2: batch}
+
+Crie uma funcao que recebe numeros de 1 a 20 e separa em batches de 5.
+
+Entrada:
+
+\begin{lstlisting}[style=devbutterpython]
+list(range(1, 21))
+\end{lstlisting}
+
+Saida:
+
+\begin{lstlisting}[style=devbutterpython]
+[[1, 2, 3, 4, 5], [6, 7, 8, 9, 10], ...]
+\end{lstlisting}
+
+\subsection{Exercicio 3: queue}
+
+Crie um producer que coloca numeros em uma fila e um consumer que imprime os numeros.
+
+\subsection{Exercicio 4: threading}
+
+Rode producer e consumer em threads separadas e coloque o nome da thread no log.
+
+\subsection{Exercicio 5: profiling}
+
+Meça o tempo de uma funcao usando \code{perf_counter}.
+
+\subsection{Exercicio 6: banco}
+
+Insira 1000 registros fake no Postgres com:
+
+\begin{itemize}
+  \item insert linha por linha;
+  \item batch insert;
+\end{itemize}
+
+Compare o tempo.
+
+\section{Testes de banco}
+
+No comeco, pode testar manualmente. Depois, use um banco de teste via Docker.
+
+Teste importante:
+
+\begin{itemize}
+  \item inserir batch;
+  \item contar linhas;
+  \item consultar por tipo;
+  \item garantir que \code{value_numeric} vira \code{NULL} quando valor e texto.
+\end{itemize}

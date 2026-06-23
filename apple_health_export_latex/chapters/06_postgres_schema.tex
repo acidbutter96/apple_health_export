@@ -1,0 +1,154 @@
+\chapter{Postgres desde o inicio}
+
+\section{Por que Postgres em vez de CSV?}
+
+CSV e simples para debugar, mas o objetivo deste projeto tambem e treinar banco, indices, queries e performance. Entao faz sentido usar Postgres desde o inicio.
+
+Com Postgres voce treina:
+
+\begin{itemize}
+  \item schema design;
+  \item tipos de dados;
+  \item \code{JSONB};
+  \item batch insert;
+  \item transacoes;
+  \item indices;
+  \item \code{EXPLAIN ANALYZE};
+  \item queries de insight.
+\end{itemize}
+
+\section{Docker Compose para Postgres}
+
+Arquivo: \code{docker-compose.yml}
+
+\begin{lstlisting}[style=devbutterbash]
+services:
+  postgres:
+    image: postgres:16
+    container_name: apple_health_postgres
+    environment:
+      POSTGRES_USER: apple
+      POSTGRES_PASSWORD: apple
+      POSTGRES_DB: apple_health
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+\end{lstlisting}
+
+Subir banco:
+
+\begin{lstlisting}[style=devbutterbash]
+docker compose up -d
+\end{lstlisting}
+
+\section{Settings}
+
+Arquivo: \code{src/config/settings.py}
+
+\begin{lstlisting}[style=devbutterpython]
+from dataclasses import dataclass
+import os
+
+
+@dataclass(frozen=True, slots=True)
+class Settings:
+    postgres_host: str = os.getenv("POSTGRES_HOST", "localhost")
+    postgres_port: int = int(os.getenv("POSTGRES_PORT", "5433"))
+    postgres_user: str = os.getenv("POSTGRES_USER", "apple")
+    postgres_password: str = os.getenv("POSTGRES_PASSWORD", "apple")
+    postgres_db: str = os.getenv("POSTGRES_DB", "apple_health")
+    batch_size: int = int(os.getenv("BATCH_SIZE", "5000"))
+
+    @property
+    def database_url(self) -> str:
+        return (
+            f"postgresql://{self.postgres_user}:"
+            f"{self.postgres_password}@"
+            f"{self.postgres_host}:{self.postgres_port}/"
+            f"{self.postgres_db}"
+        )
+\end{lstlisting}
+
+\section{Schema inicial}
+
+Tabela principal: \code{health_records}.
+
+\begin{lstlisting}[style=devbuttersql]
+CREATE TABLE IF NOT EXISTS health_records (
+    id BIGSERIAL PRIMARY KEY,
+    apple_record_id BIGINT NOT NULL,
+    type TEXT,
+    source_name TEXT,
+    source_version TEXT,
+    device TEXT,
+    unit TEXT,
+    creation_date TIMESTAMPTZ,
+    start_date TIMESTAMPTZ,
+    end_date TIMESTAMPTZ,
+    value TEXT,
+    value_numeric DOUBLE PRECISION,
+    metadata JSONB
+);
+\end{lstlisting}
+
+\section{Tabela parse\_runs}
+
+Essa tabela guarda historico de execucoes do parser.
+
+\begin{lstlisting}[style=devbuttersql]
+CREATE TABLE IF NOT EXISTS parse_runs (
+    id BIGSERIAL PRIMARY KEY,
+    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    finished_at TIMESTAMPTZ,
+    file_path TEXT NOT NULL,
+    total_records BIGINT DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'running',
+    error TEXT
+);
+\end{lstlisting}
+
+\section{Indices}
+
+Consultas de insights vao filtrar muito por tipo e data. Entao os primeiros indices sao:
+
+\begin{lstlisting}[style=devbuttersql]
+CREATE INDEX IF NOT EXISTS idx_health_records_type
+ON health_records (type);
+
+CREATE INDEX IF NOT EXISTS idx_health_records_start_date
+ON health_records (start_date);
+
+CREATE INDEX IF NOT EXISTS idx_health_records_type_start_date
+ON health_records (type, start_date);
+\end{lstlisting}
+
+\section{Por que indice importa?}
+
+Sem indice, o banco pode precisar varrer muitas linhas:
+
+\[
+O(n)
+\]
+
+Com indice B-tree, buscas por tipo/data podem se aproximar de:
+
+\[
+O(log n)
+\]
+
+Na pratica, confirme com:
+
+\begin{lstlisting}[style=devbuttersql]
+EXPLAIN ANALYZE
+SELECT
+    DATE(start_date) AS day,
+    AVG(value_numeric) AS avg_heart_rate
+FROM health_records
+WHERE type = 'HKQuantityTypeIdentifierHeartRate'
+GROUP BY DATE(start_date)
+ORDER BY day;
+\end{lstlisting}

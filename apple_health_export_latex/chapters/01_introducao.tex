@@ -1,0 +1,73 @@
+\chapter{Introducao: o que este projeto quer resolver}
+
+A ideia central do projeto e criar um aplicativo capaz de ler os dados exportados do Apple Health no iPhone e transformar esses arquivos em uma base estruturada para gerar insights pessoais. O ponto importante e que o arquivo exportado pode ser grande: centenas de megabytes de XML e varios arquivos GPX. Portanto, este nao e apenas um exercicio de leitura de arquivo. E um problema real de engenharia de dados local.
+
+\begin{studybox}{Objetivo principal}
+Criar uma pipeline que leia o Apple Health Export, processe os dados sem explodir memoria, salve em Postgres e permita consultas para gerar insights como batimento cardiaco medio, passos por dia, sono, treinos, calorias, distancia e tendencias ao longo do tempo.
+\end{studybox}
+
+O fluxo do projeto sera:
+
+\begin{verbatim}
+Apple Health export bruto
+        -> streaming parser
+        -> fila / batches
+        -> Postgres
+        -> queries otimizadas
+        -> insights
+        -> dashboard / app
+\end{verbatim}
+
+A primeira decisao importante e: nao analisar o XML gigante diretamente toda vez. O XML e o dado bruto. Ele deve ser parseado uma vez para uma base estruturada. Depois disso, os insights devem consultar o banco.
+
+\section{Por que este projeto e bom para estudo?}
+
+Porque ele junta varios conceitos que normalmente aparecem separados:
+
+\begin{itemize}[leftmargin=1.2cm]
+  \item arquivos grandes e \conceptbox{streaming};
+  \item escrita em banco e \conceptbox{I/O-bound};
+  \item parsing e conversoes com parte \conceptbox{CPU-bound};
+  \item \conceptbox{filas}, \conceptbox{threads}, \conceptbox{multiprocessing} e \conceptbox{async/await};
+  \item \conceptbox{dataclass}, \conceptbox{batching}, \conceptbox{logging}, \conceptbox{profiling};
+  \item estruturas de dados como \conceptbox{list}, \conceptbox{dict}, \conceptbox{set}, \conceptbox{queue};
+  \item conceitos de Big O: \conceptbox{O(1)}, \conceptbox{O(n)}, \conceptbox{O(log n)}, \conceptbox{O(n²)};
+  \item Postgres, indices, \code{EXPLAIN ANALYZE} e performance de queries.
+\end{itemize}
+
+Ou seja: o app vira um desafio pratico de engenharia em Python.
+
+\section{O que nao fazer}
+
+Evite carregar o XML inteiro em memoria:
+
+\begin{lstlisting}[style=devbutterpython]
+content = file.read_text(encoding="utf-8")
+soup = BeautifulSoup(content, "xml")
+\end{lstlisting}
+
+Essa abordagem pode funcionar para XML pequeno, mas e ruim para arquivos de 280 MB, 628 MB ou maiores. Ela carrega todo o texto e ainda monta uma arvore completa em memoria.
+
+\section{O que fazer}
+
+Usar parsing incremental:
+
+\begin{lstlisting}[style=devbutterpython]
+import xml.etree.ElementTree as ET
+
+for event, element in ET.iterparse(xml_file, events=("end",)):
+    # processa o elemento
+    element.clear()
+\end{lstlisting}
+
+Esse modelo le um pedaco, processa e limpa. A ideia e manter memoria quase constante.
+
+\section{Meta de aprendizado}
+
+A regra do projeto sera:
+
+\begin{center}
+\Large primeiro funciona $\rightarrow$ depois mede $\rightarrow$ depois otimiza $\rightarrow$ depois compara
+\end{center}
+
+Isso impede que voce comece com async, multiprocessing, threads, Postgres, indices e dashboard tudo ao mesmo tempo. Primeiro construiremos uma versao simples e correta. Depois adicionaremos complexidade de forma controlada.

@@ -1,0 +1,153 @@
+\chapter{Algoritmos e estruturas de dados aplicados}
+
+\section{list / array}
+
+Em Python, \code{list} e um array dinamico. No projeto, ela aparece como batch:
+
+\begin{lstlisting}[style=devbutterpython]
+batch: list[HealthRecord] = []
+batch.append(record)
+\end{lstlisting}
+
+\code{append} e O(1) medio. Acesso por indice tambem e O(1).
+
+\section{dict / hash map}
+
+\code{dict} e uma tabela hash. Usamos para metadata e contadores.
+
+\begin{lstlisting}[style=devbutterpython]
+metadata: dict[str, str] = {}
+metadata[key] = value
+\end{lstlisting}
+
+Lookup medio:
+
+\[
+O(1)
+\]
+
+\section{set / hash set}
+
+\code{set} e usado para membership rapido.
+
+\begin{lstlisting}[style=devbutterpython]
+allowed_types = {
+    "HKQuantityTypeIdentifierHeartRate",
+    "HKQuantityTypeIdentifierStepCount",
+}
+
+if record.type in allowed_types:
+    process(record)
+\end{lstlisting}
+
+Checar se um item esta no set e O(1) medio.
+
+\section{queue}
+
+Fila FIFO usada em producer/consumer.
+
+\begin{lstlisting}[style=devbutterpython]
+record_queue.put(record)
+record = record_queue.get()
+\end{lstlisting}
+
+\section{tree}
+
+XML e uma arvore:
+
+\begin{verbatim}
+Workout
+ ├── MetadataEntry
+ ├── WorkoutStatistics
+ └── WorkoutEvent
+\end{verbatim}
+
+Cada tag e um no; tags internas sao filhos.
+
+\section{recursion}
+
+Recursao pode percorrer arvores pequenas:
+
+\begin{lstlisting}[style=devbutterpython]
+def walk(element):
+    print(element.tag)
+
+    for child in element:
+        walk(child)
+\end{lstlisting}
+
+Mas evite usar recursao carregando a arvore inteira do XML gigante. Para o export real, prefira streaming.
+
+\section{sorting}
+
+Ordenar por data e comum em series temporais. Ordenacao geralmente custa:
+
+\[
+O(n \log n)
+\]
+
+No banco:
+
+\begin{lstlisting}[style=devbuttersql]
+SELECT *
+FROM health_records
+ORDER BY start_date;
+\end{lstlisting}
+
+\section{binary search}
+
+Busca binaria encontra um item em lista ordenada em O(log n). Em Python:
+
+\begin{lstlisting}[style=devbutterpython]
+from bisect import bisect_left
+
+positions = [1, 3, 5, 7, 9]
+index = bisect_left(positions, 6)
+\end{lstlisting}
+
+No projeto, a ideia aparece ao buscar registros em series temporais ordenadas. No banco, indices B-tree usam uma logica parecida de busca eficiente.
+
+\section{two pointers}
+
+Dois ponteiros servem para cruzar duas listas ordenadas sem fazer O(n²).
+
+Exemplo: achar batimentos dentro de intervalos de sono.
+
+\begin{verbatim}
+sono:       [inicio, fim]
+heart rate: timestamp ordenado
+\end{verbatim}
+
+Em vez de comparar todo sono com todo batimento, voce avanca ponteiros conforme as datas.
+
+\section{sliding window}
+
+Sliding window e uma janela movel. Exemplo: media movel de 7 dias.
+
+Em SQL:
+
+\begin{lstlisting}[style=devbuttersql]
+SELECT
+    day,
+    steps,
+    AVG(steps) OVER (
+        ORDER BY day
+        ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+    ) AS steps_7d_avg
+FROM daily_summary
+ORDER BY day;
+\end{lstlisting}
+
+Isso e muito util para tendencias de passos, sono e batimento.
+
+\section{O(n²): o que evitar}
+
+Evite loops aninhados sem necessidade:
+
+\begin{lstlisting}[style=devbutterpython]
+for sleep_interval in sleep_intervals:
+    for heart_rate in heart_rates:
+        compare(sleep_interval, heart_rate)
+\end{lstlisting}
+
+Se cada lista tem muitos itens, isso vira O(n²). Busque alternativas com ordenacao, indices, SQL, two pointers ou janelas.
