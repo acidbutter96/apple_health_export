@@ -46,7 +46,8 @@ testpath = ["tests"]
 addopts = [
     "-ra",
     "-q",
-    "--import-mode=importlib"
+    "--import-mode=importlib",
+    "--pyargs"
 ]
 markers = [
     "unit: fast isolated tests",
