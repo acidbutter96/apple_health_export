@@ -24,21 +24,33 @@ dev = [
 
 [tool.poetry]
 packages = [
-    { include = "config", from = "src" },
-    { include = "parser", from = "src" }
+    { include = "config", from = "app" },
+    { include = "parser", from = "app" }
 ]
 
 [tool.pyright]
-include = ["src", "notebooks"]
-extraPaths = ["src"]
+include = ["app", "notebooks"]
+extraPaths = ["app"]
 pythonVersion = "3.12"
 typeCheckingMode = "basic"
 
 [tool.mypy]
 python_version = "3.12"
-mypy_path = "src"
+mypy_path = "app"
 strict = false
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+pythonpath=["."]
+testpaths = ["tests"]
+collect_imported_tests = false
+addopts="-ra -vv"
+norecursedirs = [
+    ".git",
+    ".venv",
+    ".mypy_cache",
+    ".pytest_cache",
+    "__pycache__"
+]
