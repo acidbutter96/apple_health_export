@@ -1,0 +1,5 @@
+{
+    "debugpy.showPythonInlineValues": true,
+    "python.terminal.useEnvFile": true,
+    "debug.console.fontFamily": "fira code"
+}

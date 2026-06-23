@@ -1,5 +1,5 @@
 .venv
 data/*
 !data/.gitkeep
-.DStore
+*.DS_Store
 __pycache__
