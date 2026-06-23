@@ -1,6 +1,4 @@
-from bs4 import BeautifulSoup
 from pathlib import Path
-
 
 
 class BaseParser:
@@ -10,33 +8,46 @@ class BaseParser:
         output_format : str = "",
     ):
         self.data_path: Path = (
-            Path(data_path) or self.get_data_path
+            Path(data_path) or self._get_data_path
         ).resolve(strict=True,)
         self.output_format: str = output_format or ".csv"
-    
-    def check_for_files(
+
+    def generate_data_dict(
         self,
         path: Path,
-        files_list: list[Path] = [],
-    ) -> list[Path]:
+        data: dict[str, list[Path]] = {},
+    ) -> dict[str, list[Path]]:
+        data_list: dict[str, list[Path]] = data or {
+            "xml": [],
+            "gpx": [] 
+        }
         if path.is_dir():
             for file in path.iterdir():
-                if file.is_file():
-                    files_list.append(file.resolve())
+                not_gitkeep: bool = file.name != ".gitkeep"
+                if file.is_file() and not_gitkeep:
+                    file_suffix = file.suffix[1:].lower() or ""
+                    data_list.get(file_suffix, []).append(file)
+
                     continue
 
-                if file.is_dir():
-                    new_list = self.check_for_files(
-                        files_list=files_list,
-                        path=file,
-                    )
-                    files_list = [*files_list, *new_list]
+                new_data_dict: dict[str, list[Path]]= {}
+                if file.is_dir() and not_gitkeep:
+                    new_data_dict = {
+                        **self.generate_data_dict(
+                                data=data,
+                                path=file,
+                            )
+                        }
+                    data = {
+                        **data,
+                        **new_data_dict,
+                    }
 
-        return files_list
+        return data_list
 
-    def get_files(self,) -> list[Path] | list:
-        return self.check_for_files(path=self.data_path)
-    
+    def get_data_dict(self,) -> dict[str, list[Path]] | dict:
+        return self.generate_data_dict(path=self.data_path)
+
     @property
-    def get_data_path(self,) -> Path:
+    def _get_data_path(self,) -> Path:
         return Path("../data")
