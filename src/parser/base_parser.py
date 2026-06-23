@@ -15,34 +15,31 @@ class BaseParser:
     def generate_data_dict(
         self,
         path: Path,
-        data: dict[str, list[str]] = {},
+        data: dict[str, list[str]] | None = None,
     ) -> dict[str, list[str]]:
-        data_list: dict[str, list[str]] = data or {
-            "xml": [],
-            "gpx": [] 
-        }
-        if path.is_dir():
-            for file in path.iterdir():
-                not_gitkeep: bool = file.name != ".gitkeep"
-                if file.is_file() and not_gitkeep:
-                    file_suffix = file.suffix[1:].lower() or ""
-                    data_list.get(file_suffix, []).append(str(file.resolve()))
-                    continue
+        if data is None:
+            data = {
+                "xml": [],
+                "gpx": [],
+            }
 
-                new_data_dict: dict[str, list[str]]= {}
-                if file.is_dir() and not_gitkeep:
-                    new_data_dict = {
-                        **self.generate_data_dict(
-                                data=data,
-                                path=file,
-                            )
-                        }
-                    data = {
-                        **data,
-                        **new_data_dict,
-                    }
+        if not path.is_dir():
+            return data
 
-        return data_list
+        for file in path.iterdir():
+            if file.name == ".gitkeep":
+                continue
+
+            if file.is_file():
+                file_suffix = file.suffix[1:].lower()
+
+                if file_suffix in data:
+                    data[file_suffix].append(str(file.resolve()))
+
+            elif file.is_dir():
+                self.generate_data_dict(path=file, data=data)
+
+        return data
 
     def get_data_dict(self,) -> dict[str, list[str]] | dict:
         data_dict = self.generate_data_dict(path=self.data_path)
