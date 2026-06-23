@@ -1,5 +1,7 @@
 {
-    "debugpy.showPythonInlineValues": true,
-    "python.terminal.useEnvFile": true,
-    "debug.console.fontFamily": "fira code"
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }

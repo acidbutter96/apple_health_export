@@ -39,18 +39,22 @@ python_version = "3.12"
 mypy_path = "app"
 strict = false
 
+[tool.pytest]
+minversion = "9.1.1"
+pythonpath = ["app"]
+testpath = ["tests"]
+addopts = [
+    "-ra",
+    "-q",
+    "--import-mode=importlib"
+]
+markers = [
+    "unit: fast isolated tests",
+    "integration: tests that touch database, services, or external systems",
+    "slow: slow tests",
+]
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-pythonpath=["."]
-testpaths = ["tests"]
-collect_imported_tests = false
-addopts="-ra -vv"
-norecursedirs = [
-    ".git",
-    ".venv",
-    ".mypy_cache",
-    ".pytest_cache",
-    "__pycache__"
-]

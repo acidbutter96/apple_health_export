@@ -11,3 +11,6 @@ challenge.zip
 ## git
 .env**
 !.env.example
+
+.pytest_cache
+./.vscode/**

@@ -46,26 +46,51 @@ This project is also a challenge for myself. I want to make it step by step, und
 ::: 
 
 # Project Currently Structure
-
 ```
 apple_health_export
 ├─ .editorconfig
+├─ .pytest_cache
+│  ├─ CACHEDIR.TAG
+│  ├─ README.md
+│  └─ v
+│     └─ cache
+│        ├─ lastfailed
+│        └─ nodeids
 ├─ README.md
+├─ app
+│  ├─ __init__.py
+│  ├─ app.py
+│  ├─ config
+│  │  ├─ __init__.py
+│  │  ├─ logger.py
+│  │  └─ settings.py
+│  ├─ db
+│  │  └─ __init__.py
+│  ├─ insights
+│  │  └─ __init__.py
+│  ├─ models
+│  │  └─ __init__.py
+│  ├─ parser
+│  │  ├─ __init__.py
+│  │  ├─ base_parser.py
+│  │  └─ xml_parser.py
+│  └─ pipelines
+│     └─ __init__.py
+├─ docker
+│  └─ Dockerfile
+├─ docker-compose.yml
 ├─ notebooks
 │  ├─ README.md
 │  └─ playground.ipynb
 ├─ poetry.lock
 ├─ pyproject.toml
-└─ src
+└─ tests
    ├─ __init__.py
-   ├─ app.py
-   ├─ config
-   │  ├─ __init__.py
-   │  ├─ logger.py
-   │  └─ settings.py
+   ├─ fixtures
+   │  └─ xml
+   │     └─ small_exports.xml
    └─ parser
-      ├─ __init__.py
-      ├─ base_parser.py
-      └─ xml_parser.py
+      ├─ conftest.py
+      └─ test_xml_parser.py
 
 ```
