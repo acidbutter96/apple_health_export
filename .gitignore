@@ -1,0 +1,5 @@
+.venv
+data/*
+!data/.gitkeep
+.DStore
+__pycache__
