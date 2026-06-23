@@ -1,0 +1,3 @@
+[submodule "apple_health_export_insights_latex_document"]
+	path = apple_health_export_insights_latex_document
+	url = git@github.com:acidbutter96/apple_health_export_insights_latex_document.git
