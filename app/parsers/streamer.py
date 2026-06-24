@@ -12,7 +12,10 @@ class Streamer:
         )
         
         for event, element in context:      #  event says if is the start or end of the tag, element it's the tag it self
-            if element.tag == "Records":
+            if element.tag == "Record":
                 yield element               # get the element
-                "".split("")
             element.clear()                 #   relase from memory
+
+    def clean_tag(self, tag: str) -> str:
+        ...
+

@@ -14,3 +14,7 @@ challenge.zip
 
 .pytest_cache
 ./.vscode/**
+
+notebooks/**
+
+temp/**
