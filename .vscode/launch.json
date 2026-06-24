@@ -5,7 +5,7 @@
             "name": "Python Debugger: App - Poetry",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/app/app.py",
+            "program": "${workspaceFolder}/app/main .py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             "python": "${workspaceFolder}/.venv/bin/python",

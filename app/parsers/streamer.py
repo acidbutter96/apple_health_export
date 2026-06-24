@@ -4,7 +4,7 @@ from pathlib import Path
 from collections.abc import Iterator
 
 
-class XMLParser:
+class Streamer:
     def stream_records_elements(self, xml_file: Path) -> Iterator[ET.Element]:
         context = ET.iterparse(
             source=xml_file,
@@ -13,6 +13,6 @@ class XMLParser:
         
         for event, element in context:      #  event says if is the start or end of the tag, element it's the tag it self
             if element.tag == "Records":
-                yield element               #
-            
-            element.clear()
+                yield element               # get the element
+                "".split("")
+            element.clear()                 #   relase from memory

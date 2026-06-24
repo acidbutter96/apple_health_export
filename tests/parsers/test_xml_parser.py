@@ -1,10 +1,10 @@
 
 from pathlib import Path
-from parsers.xml_parser import XMLParser
+from parsers import Streamer
 
 
 def test_stream_record_elements_returns_records_only():
-    xml_parser = XMLParser()
+    xml_parser = Streamer()
     file_path = Path(__file__).parents[1] / "fixtures" / "xml" / "small_exports.xml"
     
     itterator = xml_parser.stream_records_elements(xml_file=file_path)

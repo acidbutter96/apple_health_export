@@ -1,8 +1,6 @@
-from parsers.base_parser import BaseParser
-from parsers.xml_parser import XMLParser
+from parsers.streamer import Streamer
 
 
 __all__ = [
-    "BaseParser",
-    "XMLParser",
+    "Streamer",
 ]
