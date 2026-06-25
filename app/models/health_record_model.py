@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from importlib import metadata
 
 
 @dataclass(slots=True,)
@@ -14,3 +15,10 @@ class HealthRecord:
     end_date: str | None
     value: str | None
     value_numeric: float | None
+    metadata: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass(slots=True,)
+class HealthRecordEvent:
+    run_id: int
+    health_record: HealthRecord
