@@ -4,21 +4,18 @@ from collections import Counter
 from pathlib import Path
 from typing import TypedDict
 
+from parsers.parser_base import ParserBase
+
 
 class XMLProfile(TypedDict):
     tags_counter: Counter[str]
     tags_types_counters: dict[str, Counter[str]]
 
 
-class Profiler:
+class XMLProfileParser(ParserBase):
     def __init__(self, xml_path: Path):
-        self.xml_counts : XMLProfile | None = None
+        self.xml_counts : XMLProfile | None = None # pyright: ignore[reportRedeclaration, reportAttributeAccessIssue]
         self.profile_xml(xml_file=xml_path)
-
-    def _clean_tag(self, tag: str) -> str:
-        if "}" in tag:
-            return tag.split("}")[-1]
-        return tag
 
     def profile_xml(
         self,

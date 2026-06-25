@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
 
-@dataclass(slots=True)
+@dataclass(slots=True,)
 class HealthRecord:
-    apple_record_id: int
+    health_record_id: int
     type: str | None
     source_name: str | None
     source_version: str | None
@@ -14,5 +14,3 @@ class HealthRecord:
     end_date: str | None
     value: str | None
     value_numeric: float | None
-    metadata: dict[str, str]
-
