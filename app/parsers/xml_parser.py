@@ -5,19 +5,22 @@ from pathlib import Path
 
 from models.health_record_model import HealthRecord
 
-from .parser_base import ParserBase
+from parsers.parser_base import ParserBase
 
 
 class XMLParser(ParserBase):
-    def stream_records_elements(self, xml_file: Path) -> Iterator[ET.Element]:
+    def stream_records_elements(self, xml_file: Path) -> Iterator[HealthRecord]:
         context = ET.iterparse(
             source=xml_file,
             events=("end",)     # could be ignored
         )
-        
+
+        run_id = 0
+
         for event, element in context:      #  event says if is the start or end of the tag, element it's the tag it self
             if self._clean_tag(element.tag) == "Record":
-                yield element               # get the element
+                run_id += 1
+                yield self.parse_record_element(element, run_id)               # get the element
             element.clear()                 #   relase from memory
 
     def metadata_parser(self, element: ET.Element) -> dict[str, str]:
