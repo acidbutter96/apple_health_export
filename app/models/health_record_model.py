@@ -1,10 +1,10 @@
 from dataclasses import dataclass, field
-from importlib import metadata
 
 
 @dataclass(slots=True,)
 class HealthRecord:
-    health_record_id: int
+    id: int | None
+    record_hash: str
     type: str | None
     source_name: str | None
     source_version: str | None
