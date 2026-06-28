@@ -3,8 +3,6 @@ from dataclasses import dataclass, field
 
 @dataclass(slots=True,)
 class HealthRecord:
-    id: int | None
-    record_hash: str
     type: str | None
     source_name: str | None
     source_version: str | None
@@ -15,6 +13,8 @@ class HealthRecord:
     end_date: str | None
     value: str | None
     value_numeric: float | None
+    id: int | None = None
+    record_hash: str | None = None
     metadata: dict[str, str] = field(default_factory=dict)
 
 

@@ -15,12 +15,15 @@ class XMLParser(ParserBase):
             events=("end",)     # could be ignored
         )
 
-        run_id = 0
 
         for event, element in context:      #  event says if is the start or end of the tag, element it's the tag it self
+            try:
+                self._update_file_hash(element)
+            except Exception:
+                print("file hash was not created\n deal with problem")
+            
             if self._clean_tag(element.tag) == "Record":
-                run_id += 1
-                yield self.parse_record_element(element, run_id)               # get the element
+                yield self.parse_record_element(element)               # get the element
             element.clear()                 #   relase from memory
 
     def metadata_parser(self, element: ET.Element) -> dict[str, str]:
@@ -38,13 +41,11 @@ class XMLParser(ParserBase):
     def parse_record_element(
         self,
         element: ET.Element,
-        run_id: int,
     ) -> HealthRecord:
         attrs = element.attrib
         value = attrs.get("value")
 
         return HealthRecord(
-            health_record_id=run_id,
             type=attrs.get("type"),
             creation_date=attrs.get("creationDate"),
             device=attrs.get("device"),
