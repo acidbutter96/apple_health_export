@@ -1,59 +1,85 @@
+import json
 import re
+from decimal import Decimal, InvalidOperation
 from hashlib import sha256
-
-from decimal import Decimal
+from pathlib import Path
 from typing import Any
-from xml.etree.ElementTree import Element
+
+from app.models.health_record_model import HealthRecord
 
 
 class ParserBase:
-    def __init__(self,):
-        self.hash = sha256()
-        self.empty_hash = sha256()
+    """Shared helper methods for parser implementations."""
 
     def _clean_tag(self, tag: str) -> str:
+        """Remove XML namespace from an ElementTree tag.
+
+        Example:
+            "{http://www.apple.com/Health}Record" -> "Record"
+        """
         if "}" in tag:
-            return tag.split("}")[-1]
+            return tag.split("}", 1)[1]
         return tag
 
-    def _safe_float(self, property: Any) -> float | None:
+    def _safe_float(self, value: Any) -> float | None:
+        """Convert a value to float without breaking the parser.
+
+        Apple Health values can be numeric strings, text categories, empty values,
+        or missing values. Numeric values become float; everything else becomes
+        None.
+        """
+        if value is None:
+            return None
+
+        value_as_text = str(value).strip()
+        if not value_as_text:
+            return None
+
         try:
-            decimal = Decimal(property)
-            return float(decimal)
-        except Exception as ex:
-            print(ex)
+            return float(Decimal(value_as_text))
+        except (InvalidOperation, ValueError, TypeError):
             return None
 
     def _pascal_to_snake_case(self, value: str) -> str:
         text = value.strip()
-
-        text = re.sub(
-            r"([a-z0-9])([A-Z])",  # () -> capture group lowercase/number [a-z0-9] before a upper caseletter ([A-Z])
-            r"\1_\2",       # \1 group 1 _ \2 group2
-            text,
-        )
-
+        text = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", text)
         return text.lower()
-    
-    def _update_file_hash(self, element: Element,):
-        element_text = element.get("text", "")
-        if not element_text:
-            return
 
-        element_bytes = element_text.encode("utf-8")
+    def compute_file_hash(self, file_path: Path, chunk_size: int = 1024 * 1024) -> str:
+        """Compute a SHA-256 hash for the whole file without loading it in memory."""
+        hasher = sha256()
 
-        if self.hash == self.empty_hash:
-            self.hash = sha256(element_bytes)
-            return
+        with file_path.open("rb") as file:
+            while chunk := file.read(chunk_size):
+                hasher.update(chunk)
 
-        self.hash.update(element_bytes)
+        return hasher.hexdigest()
 
-    def _get_element_hash(self, element: Element) -> bytes:
-        if element_text := element.get("text", ""):
-            return sha256(element_text.encode("utf-8")).digest()
-        raise Exception("Element hash was not created")
+    def compute_record_hash(self, record: HealthRecord) -> str:
+        """Compute a stable SHA-256 hash for one HealthRecord.
 
-    def get_file_hash(self,) -> bytes:
-        if self.hash == self.empty_hash:
-            raise Exception("file hash was not created")
-        return self.hash.digest()
+        Do not include database id or parser order in this hash. The goal is to
+        identify the same health record across retries or across different export
+        files.
+        """
+        stable_payload = {
+            "type": record.type,
+            "source_name": record.source_name,
+            "source_version": record.source_version,
+            "device": record.device,
+            "unit": record.unit,
+            "creation_date": record.creation_date,
+            "start_date": record.start_date,
+            "end_date": record.end_date,
+            "value": record.value,
+            "value_numeric": record.value_numeric,
+            "metadata": record.metadata,
+        }
+
+        serialized_payload = json.dumps(
+            stable_payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        )
+        return sha256(serialized_payload.encode("utf-8")).hexdigest()

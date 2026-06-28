@@ -1,6 +1,6 @@
 from typing import Protocol
 
-import psycopg
+from psycopg import Connection
 
 from app.benchmarks.rows import record_to_row
 from app.models.health_record_model import HealthRecord
@@ -8,24 +8,24 @@ from app.pipeline.batching import chunk_records
 
 
 INSERT_SQL = """
-    INSERT INTO benchmark_health_records (
-        record_hash,
-        type,
-        source_name,
-        source_version,
-        device,
-        unit,
-        creation_date,
-        start_date,
-        end_date,
-        value,
-        value_numeric,
-        metadata
-    )
-    VALUES (
-        %s, %s, %s, %s, %s, %s,
-        %s, %s, %s, %s, %s, %s::jsonb
-    );
+INSERT INTO benchmark_health_records (
+    record_hash,
+    type,
+    source_name,
+    source_version,
+    device,
+    unit,
+    creation_date,
+    start_date,
+    end_date,
+    value,
+    value_numeric,
+    metadata
+)
+VALUES (
+    %s, %s, %s, %s, %s, %s,
+    %s, %s, %s, %s, %s, %s::jsonb
+);
 """
 
 
@@ -38,7 +38,7 @@ class RecordWriter(Protocol):
 class SingleInsertWriter:
     name = "single_insert"
 
-    def __init__(self, connection: psycopg.Connection) -> None:
+    def __init__(self, connection: Connection) -> None:
         self.connection = connection
 
     def write(self, records: list[HealthRecord]) -> int:
@@ -55,7 +55,7 @@ class BatchInsertWriter:
 
     def __init__(
         self,
-        connection: psycopg.Connection,
+        connection: Connection,
         batch_size: int,
     ) -> None:
         self.connection = connection
@@ -77,7 +77,7 @@ class BatchInsertWriter:
 class CopyWriter:
     name = "copy"
 
-    def __init__(self, connection: psycopg.Connection) -> None:
+    def __init__(self, connection: Connection) -> None:
         self.connection = connection
 
     def write(self, records: list[HealthRecord]) -> int:

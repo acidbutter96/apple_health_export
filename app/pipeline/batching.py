@@ -7,6 +7,14 @@ def chunk_records(
     records: Iterable[HealthRecord],
     batch_size: int,
 ) -> Iterator[list[HealthRecord]]:
+    """Group records into batches.
+
+    Time complexity: O(n), because each record is visited once.
+    Memory complexity: O(batch_size), because only one chunk is stored at a time.
+    """
+    if batch_size <= 0:
+        raise ValueError("batch_size must be greater than zero")
+
     chunk: list[HealthRecord] = []
 
     for record in records:

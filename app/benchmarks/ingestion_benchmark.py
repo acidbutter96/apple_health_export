@@ -35,7 +35,7 @@ def run_benchmark(
         "input_size": inserted,
         "batch_size": batch_size,
         "elapsed_seconds": elapsed,
-        "rows_per_second": inserted / elapsed,
+        "rows_per_second": inserted / elapsed if elapsed else 0,
     }
 
 
