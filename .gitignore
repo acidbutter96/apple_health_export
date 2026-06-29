@@ -16,6 +16,7 @@ challenge.zip
 ./.vscode/**
 
 notebooks/**
+!notebooks/.gitkeep
 
 temp/**
 
