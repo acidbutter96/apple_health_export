@@ -49,48 +49,70 @@ This project is also a challenge for myself. I want to make it step by step, und
 ```
 apple_health_export
 ├─ .editorconfig
-├─ .pytest_cache
-│  ├─ CACHEDIR.TAG
-│  ├─ README.md
-│  └─ v
-│     └─ cache
-│        ├─ lastfailed
-│        └─ nodeids
 ├─ README.md
 ├─ app
-│  ├─ __init__.py
-│  ├─ app.py
+│  ├─ benchmarks
+│  │  ├─ __init__.py
+│  │  ├─ fake_data.py
+│  │  ├─ ingestion_benchmark.py
+│  │  ├─ rows.py
+│  │  └─ writers.py
 │  ├─ config
 │  │  ├─ __init__.py
 │  │  ├─ logger.py
 │  │  └─ settings.py
-│  ├─ db
-│  │  └─ __init__.py
+│  ├─ database
+│  │  ├─ __init__.py
+│  │  ├─ connection.py
+│  │  └─ schema.sql
 │  ├─ insights
 │  │  └─ __init__.py
+│  ├─ main.py
 │  ├─ models
-│  │  └─ __init__.py
-│  ├─ parser
 │  │  ├─ __init__.py
-│  │  ├─ base_parser.py
-│  │  └─ xml_parser.py
-│  └─ pipelines
-│     └─ __init__.py
+│  │  └─ health_record_model.py
+│  ├─ parsers
+│  │  ├─ __init__.py
+│  │  ├─ parser_base.py
+│  │  ├─ xml_parser.py
+│  │  └─ xml_profile_parser.py
+│  ├─ pipeline
+│  │  ├─ __init__.py
+│  │  ├─ batching.py
+│  │  └─ ingestion.py
+│  └─ repositories
+│     ├─ benchmark_repository.py
+│     ├─ health_record_repository.py
+│     └─ parse_run_repository.py
 ├─ docker
 │  └─ Dockerfile
 ├─ docker-compose.yml
-├─ notebooks
-│  ├─ README.md
-│  └─ playground.ipynb
 ├─ poetry.lock
 ├─ pyproject.toml
 └─ tests
    ├─ __init__.py
+   ├─ benchmarks
+   │  ├─ conftest.py
+   │  ├─ test_fake_data.py
+   │  ├─ test_ingestion_benchmark.py
+   │  ├─ test_rows.py
+   │  └─ test_writers.py
+   ├─ conftest.py
+   ├─ database
    ├─ fixtures
    │  └─ xml
    │     └─ small_exports.xml
-   └─ parser
-      ├─ conftest.py
-      └─ test_xml_parser.py
+   ├─ parsers
+   │  ├─ test_parser_base.py
+   │  ├─ test_xml_parser.py
+   │  └─ test_xml_profile_parser.py
+   ├─ pipeline
+   │  ├─ test_batching.py
+   │  └─ test_ingestion.py
+   └─ repositories
+      ├─ fakes.py
+      ├─ test_benchmark_repository.py
+      ├─ test_health_record_repository.py
+      └─ test_parse_run_repository.py
 
 ```
